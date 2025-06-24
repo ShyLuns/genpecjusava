@@ -19,7 +19,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ✅ CORS bien configurado
-const allowedOrigins = ['https://gpec-frontend.onrender.com'];
+const allowedOrigins = [
+  'https://gpec-frontend.onrender.com',
+  'https://genpecjusava.onrender.com'
+];
+
 
 app.use(cors({
   origin: function (origin, callback) {
