@@ -18,13 +18,13 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ CORS bien configurado
+// 🔐 Dominios permitidos
 const allowedOrigins = [
   'https://genpecjusava.onrender.com'
 ];
 
-
-app.use(cors({
+// 🎯 Configuración central de CORS
+const corsOptions = {
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
@@ -35,22 +35,26 @@ app.use(cors({
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+};
 
-// ✅ Permitir respuestas a OPTIONS (preflight)
-app.options('*', cors());
+// 🧠 Aplica CORS a todas las rutas y preflights
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
+// 📦 Middleware
 app.use(express.json());
 
-// Rutas
+// 📁 Archivos estáticos (uploads)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// 🔗 Rutas principales
 app.use('/api/auth', authRoutes);
 app.use('/api/empresas', empresaRoutes);
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/plantillas', plantillaRoutes);
 app.use('/api/documentos', documentosRoutes);
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Ruta de prueba
+// 🧪 Ruta de test conexión a base de datos
 app.get('/test-db', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT 1 + 1 AS result');
@@ -61,6 +65,7 @@ app.get('/test-db', async (req, res) => {
   }
 });
 
+// 🚀 Inicia servidor
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
