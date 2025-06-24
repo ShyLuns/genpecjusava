@@ -1,0 +1,10 @@
+/* tailwindcss v4 auto config */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Puedes agregar tus estilos personalizados aquí */
+
+.swal2-container {
+  z-index: 13001 !important;
+}

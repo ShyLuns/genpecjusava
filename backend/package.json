@@ -1,0 +1,20 @@
+{
+  "type": "module",
+  "dependencies": {
+    "@emailjs/nodejs": "^5.0.2",
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "docx": "^9.2.0",
+    "docx4js": "^3.3.0",
+    "docxtemplater": "^3.60.1",
+    "dotenv": "^16.4.7",
+    "exceljs": "^4.4.0",
+    "express": "^4.21.2",
+    "express-validator": "^7.2.1",
+    "jsonwebtoken": "^9.0.2",
+    "mammoth": "^1.9.0",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.12.0",
+    "pizzip": "^3.1.8"
+  }
+}
