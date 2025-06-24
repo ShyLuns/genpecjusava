@@ -21,7 +21,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: 'https://gpec-frontend.onrender.com', // 👈 tu frontend real
+  credentials: true
+}));
+
 app.use(express.json());
 
 // Rutas
