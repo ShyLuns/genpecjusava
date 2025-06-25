@@ -25,21 +25,26 @@ const allowedOrigins = [
 
 // 🎯 Configuración central de CORS
 const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: 'https://genpecjusava.onrender.com',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
 
-// 🧠 Aplica CORS a todas las rutas y preflights
+// ✅ Middleware CORS aplicado a todo
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+
+// ✅ Middleware manual para OPTIONS
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    res.header('Access-Control-Allow-Origin', 'https://genpecjusava.onrender.com');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.sendStatus(204);
+  } else {
+    next();
+  }
+});
 
 // 📦 Middleware
 app.use(express.json());
