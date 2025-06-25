@@ -18,17 +18,23 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ CORS correctamente configurado
-app.use(cors({
-  origin: true, // Permite cualquier origen que venga en la cabecera 'Origin'
-  credentials: true
-}));
+// 1️⃣ Primero: preflight manual y global
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
 
-// ✅ Middleware de Express
-app.use(express.json());
+// 2️⃣ Luego: configura CORS si quieres restringido (opcional)
+app.use(cors());
 
 // ✅ Archivos estáticos
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// ✅ Middleware de Express
+app.use(express.json());
 
 // ✅ Rutas
 app.use('/api/auth', authRoutes);
@@ -51,5 +57,5 @@ app.get('/test-db', async (req, res) => {
 // ✅ Arranque
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🟢 Servidor activo en puerto ${PORT}`);
+  console.log(`🟢 Servidor activo en puerto actualizado ${PORT}`);
 });
