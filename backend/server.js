@@ -18,48 +18,37 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// 🔐 Dominios permitidos
-const allowedOrigins = [
-  'https://genpecjusava.onrender.com'
-];
+// ✅ Permitir origen del frontend
+const allowedOrigin = 'https://genpecjusava.onrender.com';
 
-// 🎯 Configuración central de CORS
-const corsOptions = {
-  origin: 'https://genpecjusava.onrender.com',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-};
-
-// ✅ Middleware CORS aplicado a todo
-app.use(cors(corsOptions));
-
-// ✅ Middleware manual para OPTIONS
+// ✅ CORS: permitir preflight + headers
 app.use((req, res, next) => {
-  if (req.method === 'OPTIONS') {
-    res.header('Access-Control-Allow-Origin', 'https://genpecjusava.onrender.com');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.sendStatus(204);
-  } else {
-    next();
+  res.header("Access-Control-Allow-Origin", allowedOrigin);
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.header("Access-Control-Allow-Credentials", "true");
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204); // Sin contenido, pero válida
   }
+
+  next();
 });
 
-// 📦 Middleware
+// 📦 Middleware general
 app.use(express.json());
 
-// 📁 Archivos estáticos (uploads)
+// 📁 Archivos estáticos
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// 🔗 Rutas principales
+// 🔗 Rutas
 app.use('/api/auth', authRoutes);
 app.use('/api/empresas', empresaRoutes);
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/plantillas', plantillaRoutes);
 app.use('/api/documentos', documentosRoutes);
 
-// 🧪 Ruta de test conexión a base de datos
+// 🧪 Ruta de prueba
 app.get('/test-db', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT 1 + 1 AS result');
@@ -73,5 +62,5 @@ app.get('/test-db', async (req, res) => {
 // 🚀 Inicia servidor
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`🟢 Servidor activo en puerto ${PORT}`);
 });
