@@ -44,7 +44,8 @@ router.post("/login", async (req, res) => {
   }
 
   try {
-    const [rows] = await pool.query("SELECT * FROM usuarios WHERE correo = ?", [correo]);
+    const correoNormalizado = correo.trim().toLowerCase();
+    const [rows] = await pool.query("SELECT * FROM usuarios WHERE correo = ?", [correoNormalizado]);
 
     if (rows.length === 0) {
       return res.status(401).json({ error: "Usuario no encontrado." });
@@ -64,12 +65,9 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Contraseña incorrecta." });
     }
 
-    // ✅ Verificar si el usuario está inactivo por su estado (ENUM)
     if (usuario.estado !== 'activo') {
       return res.status(403).json({ error: "Usuario inactivo. Contacta al administrador." });
     }
-    
-    console.log("Intentando login para:", correo);
 
     const token = jwt.sign(
       { id: usuario.id, correo: usuario.correo },
