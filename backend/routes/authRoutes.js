@@ -68,6 +68,8 @@ router.post("/login", async (req, res) => {
     if (usuario.estado !== 'activo') {
       return res.status(403).json({ error: "Usuario inactivo. Contacta al administrador." });
     }
+    
+    console.log("Intentando login para:", correo);
 
     const token = jwt.sign(
       { id: usuario.id, correo: usuario.correo },
