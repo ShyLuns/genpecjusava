@@ -28,7 +28,7 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.header('Access-Control-Allow-Credentials', 'true');
 
-  // Responder directamente las preflight OPTIONS
+  // 👉 Muy importante: responde a OPTIONS antes de ir a rutas
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
