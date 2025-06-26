@@ -6,6 +6,9 @@ import { Link } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import Swal from "sweetalert2"; // ← IMPORTANTE
 
+const API_URL = import.meta.env.VITE_REACT_APP_API_URL || "http://localhost:5000";
+
+
 function Configuracion() {
     const navigate = useNavigate();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
