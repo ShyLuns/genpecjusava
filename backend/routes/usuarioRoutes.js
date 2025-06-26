@@ -123,64 +123,35 @@ router.post('/', authMiddleware, async (req, res) => {
 });
 
 
-router.put("/actualizar", authMiddleware, async (req, res) => {
-    const nombre = req.body.nombre?.trim();
-    const apellido = req.body.apellido?.trim();
-    const correoNuevo = req.body.correo?.trim().toLowerCase(); // Normaliza
+router.put("/actualizar/:id", async (req, res) => {
+    const { nombre, apellido, correo } = req.body;
 
-    const token = req.header('Authorization')?.split(' ')[1];
+    // Obtención del token del encabezado de la solicitud
+    const token = req.header('Authorization')?.split(' ')[1]; // Se asume que el token está en formato "Bearer <token>"
+
     if (!token) {
         return res.status(403).json({ message: "No se proporcionó el token" });
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const userId = decoded.id;
+        // Verificar el token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET); // Usando JWT_SECRET desde .env
+        const userId = decoded.id; // ID del usuario desde el token
 
-        console.log("➡️ UserID:", userId);
-        console.log("➡️ Correo nuevo:", correoNuevo);
+        // Actualización de los datos en la base de datos
+        await pool.query("UPDATE usuarios SET nombre = ?, apellido = ?, correo = ? WHERE id = ?", [
+            nombre,
+            apellido,
+            correo, // Cambiado 'email' por 'correo' para coincidir con el nombre de la columna en la base de datos
+            userId
+        ]);
 
-        // 1. Traer el correo actual del usuario
-        const [usuarioActual] = await pool.query("SELECT correo FROM usuarios WHERE id = ?", [userId]);
-        if (usuarioActual.length === 0) {
-            return res.status(404).json({ message: "Usuario no encontrado" });
-        }
-
-        const correoActual = usuarioActual[0].correo?.trim().toLowerCase();
-        console.log("📩 Correo actual en BD:", correoActual);
-
-        // 2. Si el correo cambió, validar que no esté en uso por otro usuario
-        if (correoNuevo !== correoActual) {
-            console.log("🧠 Correo ha cambiado. Validando duplicados...");
-
-            const [usuariosExistentes] = await pool.query(
-                "SELECT id, correo FROM usuarios WHERE correo = ? AND id != ?",
-                [correoNuevo, userId]
-            );
-
-            console.log("📌 Resultado de búsqueda:", usuariosExistentes);
-
-            if (usuariosExistentes.length > 0) {
-                return res.status(409).json({ message: "El correo ya está registrado por otro usuario" });
-            }
-        } else {
-            console.log("✅ Correo no ha cambiado. Saltando validación.");
-        }
-
-        // 3. Actualizar los datos
-        await pool.query(
-            "UPDATE usuarios SET nombre = ?, apellido = ?, correo = ? WHERE id = ?",
-            [nombre, apellido, correoNuevo, userId]
-        );
-
-        console.log("✅ Usuario actualizado correctamente.");
-        res.json({ message: "Usuario actualizado correctamente" });
+        res.json({ message: "Usuario actualizado" });
     } catch (error) {
-        console.error("❌ Error al actualizar perfil:", error);
-        return res.status(500).json({ message: "Error en el servidor" });
+        console.error('Error de autenticación:', error);
+        return res.status(401).json({ message: "Token no válido o expirado" });
     }
 });
-
 
 // Actualizar solo el estado de un usuario (Protegido con JWT)
 router.patch('/:id/estado', authMiddleware, async (req, res) => {

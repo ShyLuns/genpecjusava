@@ -8,7 +8,6 @@ import Swal from "sweetalert2"; // ← IMPORTANTE
 
 const API_URL = import.meta.env.VITE_REACT_APP_API_URL || "http://localhost:5000";
 
-
 function Configuracion() {
     const navigate = useNavigate();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -48,9 +47,10 @@ function Configuracion() {
         e.preventDefault();
 
         const token = localStorage.getItem("token");
+        const userId = localStorage.getItem("userId");
 
         try {
-            const response = await fetch(`${API_URL}/usuarios/actualizar`, {
+            const response = await fetch(`${API_URL}/usuarios/actualizar/${userId}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -59,7 +59,7 @@ function Configuracion() {
                 body: JSON.stringify({
                     nombre,
                     apellido,
-                    correo: email.trim().toLowerCase()
+                    correo: email
                 })
             });
 
@@ -72,12 +72,10 @@ function Configuracion() {
 
                 Swal.fire("Éxito", "Tu información ha sido actualizada correctamente.", "success");
             } else {
-                console.log("Respuesta del servidor:", data);
                 Swal.fire("Error", data.message || "No se pudo actualizar la información.", "error");
             }
         } catch (error) {
             Swal.fire("Error", "Ocurrió un error al actualizar. Intenta más tarde.", "error");
-            console.error("Error al actualizar perfil:", error);
         }
     };
 
