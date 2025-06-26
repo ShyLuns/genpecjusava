@@ -126,7 +126,7 @@ router.post('/', authMiddleware, async (req, res) => {
 router.put("/actualizar", authMiddleware, async (req, res) => {
     const nombre = req.body.nombre?.trim();
     const apellido = req.body.apellido?.trim();
-    const correo = req.body.correo?.trim();
+    const correoNuevo = req.body.correo?.trim();
 
     const token = req.header('Authorization')?.split(' ')[1];
     if (!token) {
@@ -136,33 +136,37 @@ router.put("/actualizar", authMiddleware, async (req, res) => {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const userId = decoded.id;
-        
-        console.log("userId desde el token:", userId);
-            console.log("Intentando actualizar a correo:", correo);
 
-
-        // Verificar si el correo ya existe en otro usuario
-        const [usuariosExistentes] = await pool.query(
-            "SELECT id FROM usuarios WHERE correo = ? AND id != ?",
-            [correo, userId]
-        );
-
-        console.log("Resultado de usuariosExistentes:", usuariosExistentes);
-
-        if (usuariosExistentes.length > 0) {
-            return res.status(409).json({ message: "El correo ya está registrado por otro usuario" });
+        // 1. Traer el correo actual del usuario
+        const [usuarioActual] = await pool.query("SELECT correo FROM usuarios WHERE id = ?", [userId]);
+        if (usuarioActual.length === 0) {
+            return res.status(404).json({ message: "Usuario no encontrado" });
         }
 
-        // Actualizar la información
+        const correoActual = usuarioActual[0].correo;
+
+        // 2. Si el correo cambió, validar que no esté en uso por otro usuario
+        if (correoNuevo !== correoActual) {
+            const [usuariosExistentes] = await pool.query(
+                "SELECT id FROM usuarios WHERE correo = ? AND id != ?",
+                [correoNuevo, userId]
+            );
+
+            if (usuariosExistentes.length > 0) {
+                return res.status(409).json({ message: "El correo ya está registrado por otro usuario" });
+            }
+        }
+
+        // 3. Actualizar los datos
         await pool.query(
             "UPDATE usuarios SET nombre = ?, apellido = ?, correo = ? WHERE id = ?",
-            [nombre, apellido, correo, userId]
+            [nombre, apellido, correoNuevo, userId]
         );
 
         res.json({ message: "Usuario actualizado correctamente" });
     } catch (error) {
         console.error("Error al actualizar perfil:", error);
-        return res.status(401).json({ message: "Token no válido o expirado" });
+        return res.status(500).json({ message: "Error en el servidor" });
     }
 });
 
