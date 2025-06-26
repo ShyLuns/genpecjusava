@@ -50,7 +50,7 @@ function Configuracion() {
         const token = localStorage.getItem("token");
 
         try {
-            fetch(`${API_URL}/usuarios/actualizar`, {
+            const response = await fetch(`${API_URL}/usuarios/actualizar`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
