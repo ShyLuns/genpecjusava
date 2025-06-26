@@ -21,7 +21,7 @@ const __dirname = path.dirname(__filename);
 // ✅ PRIMERA CAPA: Middleware CORS global
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*"); // O cambia * por tu frontend
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
   if (req.method === "OPTIONS") return res.sendStatus(200);
   next();
