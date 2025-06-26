@@ -123,7 +123,7 @@ router.post('/', authMiddleware, async (req, res) => {
 });
 
 
-router.put("/actualizar/:id", async (req, res) => {
+router.put("/actualizar", authMiddleware, async (req, res) => {
     const { nombre, apellido, correo } = req.body;
 
     // Obtención del token del encabezado de la solicitud

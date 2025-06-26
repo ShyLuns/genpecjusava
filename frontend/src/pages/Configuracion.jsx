@@ -48,7 +48,7 @@ function Configuracion() {
         const userId = localStorage.getItem("userId");
 
         try {
-            const response = await fetch(`${API_URL}/usuarios/actualizar/${userId}`, {
+            fetch(`${API_URL}/usuarios/actualizar`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
