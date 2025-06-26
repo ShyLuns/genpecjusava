@@ -137,24 +137,34 @@ router.put("/actualizar", authMiddleware, async (req, res) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const userId = decoded.id;
 
+        console.log("➡️ UserID:", userId);
+        console.log("➡️ Correo nuevo:", correoNuevo);
+
         // 1. Traer el correo actual del usuario
         const [usuarioActual] = await pool.query("SELECT correo FROM usuarios WHERE id = ?", [userId]);
         if (usuarioActual.length === 0) {
             return res.status(404).json({ message: "Usuario no encontrado" });
         }
 
-        const correoActual = usuarioActual[0].correo?.trim().toLowerCase(); // También normaliza
+        const correoActual = usuarioActual[0].correo?.trim().toLowerCase();
+        console.log("📩 Correo actual en BD:", correoActual);
 
         // 2. Si el correo cambió, validar que no esté en uso por otro usuario
         if (correoNuevo !== correoActual) {
+            console.log("🧠 Correo ha cambiado. Validando duplicados...");
+
             const [usuariosExistentes] = await pool.query(
-                "SELECT id FROM usuarios WHERE LOWER(correo) = LOWER(?) AND id != ?",
+                "SELECT id, correo FROM usuarios WHERE correo = ? AND id != ?",
                 [correoNuevo, userId]
             );
+
+            console.log("📌 Resultado de búsqueda:", usuariosExistentes);
 
             if (usuariosExistentes.length > 0) {
                 return res.status(409).json({ message: "El correo ya está registrado por otro usuario" });
             }
+        } else {
+            console.log("✅ Correo no ha cambiado. Saltando validación.");
         }
 
         // 3. Actualizar los datos
@@ -163,9 +173,10 @@ router.put("/actualizar", authMiddleware, async (req, res) => {
             [nombre, apellido, correoNuevo, userId]
         );
 
+        console.log("✅ Usuario actualizado correctamente.");
         res.json({ message: "Usuario actualizado correctamente" });
     } catch (error) {
-        console.error("Error al actualizar perfil:", error);
+        console.error("❌ Error al actualizar perfil:", error);
         return res.status(500).json({ message: "Error en el servidor" });
     }
 });
