@@ -124,7 +124,9 @@ router.post('/', authMiddleware, async (req, res) => {
 
 
 router.put("/actualizar", authMiddleware, async (req, res) => {
-    const { nombre, apellido, correo } = req.body;
+    const nombre = req.body.nombre?.trim();
+    const apellido = req.body.apellido?.trim();
+    const correo = req.body.correo?.trim();
 
     const token = req.header('Authorization')?.split(' ')[1];
     if (!token) {
@@ -134,12 +136,18 @@ router.put("/actualizar", authMiddleware, async (req, res) => {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const userId = decoded.id;
+        
+        console.log("userId desde el token:", userId);
+            console.log("Intentando actualizar a correo:", correo);
+
 
         // Verificar si el correo ya existe en otro usuario
         const [usuariosExistentes] = await pool.query(
             "SELECT id FROM usuarios WHERE correo = ? AND id != ?",
             [correo, userId]
         );
+
+        console.log("Resultado de usuariosExistentes:", usuariosExistentes);
 
         if (usuariosExistentes.length > 0) {
             return res.status(409).json({ message: "El correo ya está registrado por otro usuario" });
