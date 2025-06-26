@@ -59,7 +59,7 @@ function Configuracion() {
                 body: JSON.stringify({
                     nombre,
                     apellido,
-                    correo: email
+                    correo: email.trim().toLowerCase()
                 })
             });
 

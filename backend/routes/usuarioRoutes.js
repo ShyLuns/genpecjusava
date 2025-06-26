@@ -126,7 +126,7 @@ router.post('/', authMiddleware, async (req, res) => {
 router.put("/actualizar", authMiddleware, async (req, res) => {
     const nombre = req.body.nombre?.trim();
     const apellido = req.body.apellido?.trim();
-    const correoNuevo = req.body.correo?.trim();
+    const correoNuevo = req.body.correo?.trim().toLowerCase(); // Normaliza
 
     const token = req.header('Authorization')?.split(' ')[1];
     if (!token) {
@@ -143,12 +143,12 @@ router.put("/actualizar", authMiddleware, async (req, res) => {
             return res.status(404).json({ message: "Usuario no encontrado" });
         }
 
-        const correoActual = usuarioActual[0].correo;
+        const correoActual = usuarioActual[0].correo?.trim().toLowerCase(); // También normaliza
 
         // 2. Si el correo cambió, validar que no esté en uso por otro usuario
         if (correoNuevo !== correoActual) {
             const [usuariosExistentes] = await pool.query(
-                "SELECT id FROM usuarios WHERE correo = ? AND id != ?",
+                "SELECT id FROM usuarios WHERE LOWER(correo) = LOWER(?) AND id != ?",
                 [correoNuevo, userId]
             );
 
