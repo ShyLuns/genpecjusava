@@ -45,7 +45,6 @@ function Configuracion() {
         e.preventDefault();
 
         const token = localStorage.getItem("token");
-        const userId = localStorage.getItem("userId");
 
         try {
             fetch(`${API_URL}/usuarios/actualizar`, {
@@ -70,10 +69,12 @@ function Configuracion() {
 
                 Swal.fire("Éxito", "Tu información ha sido actualizada correctamente.", "success");
             } else {
+                console.log("Respuesta del servidor:", data);
                 Swal.fire("Error", data.message || "No se pudo actualizar la información.", "error");
             }
         } catch (error) {
             Swal.fire("Error", "Ocurrió un error al actualizar. Intenta más tarde.", "error");
+            console.error("Error al actualizar perfil:", error);
         }
     };
 
