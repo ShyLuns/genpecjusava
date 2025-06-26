@@ -1,9 +1,10 @@
 [build]
 base = "frontend"
 command = "npm run build"
-publish = "frontend/dist"
+publish = "dist"
 
 [build.environment]
+NODE_VERSION = "18.19.1"
 VITE_REACT_APP_API_URL = "https://gpec-backend.onrender.com/api"
 
 [[redirects]]
