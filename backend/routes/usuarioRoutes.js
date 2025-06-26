@@ -126,32 +126,38 @@ router.post('/', authMiddleware, async (req, res) => {
 router.put("/actualizar", authMiddleware, async (req, res) => {
     const { nombre, apellido, correo } = req.body;
 
-    // Obtención del token del encabezado de la solicitud
-    const token = req.header('Authorization')?.split(' ')[1]; // Se asume que el token está en formato "Bearer <token>"
-
+    const token = req.header('Authorization')?.split(' ')[1];
     if (!token) {
         return res.status(403).json({ message: "No se proporcionó el token" });
     }
 
     try {
-        // Verificar el token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET); // Usando JWT_SECRET desde .env
-        const userId = decoded.id; // ID del usuario desde el token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const userId = decoded.id;
 
-        // Actualización de los datos en la base de datos
-        await pool.query("UPDATE usuarios SET nombre = ?, apellido = ?, correo = ? WHERE id = ?", [
-            nombre,
-            apellido,
-            correo, // Cambiado 'email' por 'correo' para coincidir con el nombre de la columna en la base de datos
-            userId
-        ]);
+        // Verificar si el correo ya existe en otro usuario
+        const [usuariosExistentes] = await pool.query(
+            "SELECT id FROM usuarios WHERE correo = ? AND id != ?",
+            [correo, userId]
+        );
 
-        res.json({ message: "Usuario actualizado" });
+        if (usuariosExistentes.length > 0) {
+            return res.status(409).json({ message: "El correo ya está registrado por otro usuario" });
+        }
+
+        // Actualizar la información
+        await pool.query(
+            "UPDATE usuarios SET nombre = ?, apellido = ?, correo = ? WHERE id = ?",
+            [nombre, apellido, correo, userId]
+        );
+
+        res.json({ message: "Usuario actualizado correctamente" });
     } catch (error) {
-        console.error('Error de autenticación:', error);
+        console.error("Error al actualizar perfil:", error);
         return res.status(401).json({ message: "Token no válido o expirado" });
     }
 });
+
 
 // Actualizar solo el estado de un usuario (Protegido con JWT)
 router.patch('/:id/estado', authMiddleware, async (req, res) => {
