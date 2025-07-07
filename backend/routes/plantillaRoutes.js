@@ -7,7 +7,7 @@ import authMiddleware from '../middleware/authMiddleware.js';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { storage } from '../utils/cloudinary.js';
-import cloudinary from "../utils/cloudinary.js";
+import { cloudinary } from "../utils/cloudinary.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
