@@ -52,10 +52,13 @@ router.post('/', authMiddleware, upload.single('archivo'), async (req, res) => {
       'INSERT INTO plantillas (nombre, tipo, ruta, tipo_empresa, creado_por) VALUES (?, ?, ?, ?, ?)',
       [originalname, tipo, ruta, tipo_empresa, usuarioId]
     );
+    console.log("📁 Archivo recibido:", req.file);
+    console.log("🏢 Tipo de empresa:", req.body.tipo_empresa);
 
     res.json({ message: 'Plantilla subida con éxito', ruta });
   } catch (error) {
     console.error(error);
+    console.error("🚨 Error al subir plantilla:", error);
     res.status(500).json({ message: 'Error al guardar la plantilla' });
   }
 });
