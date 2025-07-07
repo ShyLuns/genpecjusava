@@ -1,41 +1,40 @@
 import express from "express";
-import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
-import ExcelJS from "exceljs";
 import pool from "../db.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import XlsxPopulate from "xlsx-populate";
+import axios from "axios";
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Ruta para generar documentos (Word o Excel)
 router.get("/generar/:empresaId/:plantillaId", authMiddleware, async (req, res) => {
   const { empresaId, plantillaId } = req.params;
 
   try {
-    // Obtener empresa
+    // Obtener datos de empresa
     const [empresaRows] = await pool.query("SELECT * FROM empresas WHERE id = ?", [empresaId]);
     if (empresaRows.length === 0) return res.status(404).json({ error: "Empresa no encontrada" });
     const empresa = empresaRows[0];
 
     // Obtener plantilla
-    const [plantillaRows] = await pool.query("SELECT ruta, nombre FROM plantillas WHERE id = ?", [plantillaId]);
+    const [plantillaRows] = await pool.query("SELECT ruta, nombre, tipo FROM plantillas WHERE id = ?", [plantillaId]);
     if (plantillaRows.length === 0) return res.status(404).json({ error: "Plantilla no encontrada" });
-    const rutaPlantilla = path.resolve(__dirname, "..", plantillaRows[0].ruta);
-    if (!fs.existsSync(rutaPlantilla)) return res.status(404).json({ error: "La plantilla no existe" });
 
-    const extension = path.extname(rutaPlantilla).toLowerCase();
-    const nombreBase = `${empresa.nombre} - ${plantillaRows[0].nombre}`;
-
+    const plantilla = plantillaRows[0];
+    const url = plantilla.ruta; // URL pública de Cloudinary
+    const extension = plantilla.tipo.toLowerCase(); // 'docx' o 'xlsx'
+    const nombreBase = `${empresa.nombre} - ${plantilla.nombre}`;
     let buffer;
 
-    if (extension === ".docx") {
-      const contenido = fs.readFileSync(rutaPlantilla, "binary");
+    if (extension === "docx") {
+      // Descargar archivo desde Cloudinary
+      const response = await axios.get(url, { responseType: "arraybuffer" });
+      const contenido = response.data;
       const zip = new PizZip(contenido);
       const doc = new Docxtemplater(zip, {
         paragraphLoop: true,
@@ -46,24 +45,21 @@ router.get("/generar/:empresaId/:plantillaId", authMiddleware, async (req, res) 
       doc.render(empresa);
       buffer = doc.getZip().generate({ type: "nodebuffer" });
 
-    } else if (extension === ".xlsx") {
-      const workbook = await XlsxPopulate.fromFileAsync(rutaPlantilla);
+    } else if (extension === "xlsx") {
+      // Descargar archivo Excel desde Cloudinary
+      const response = await axios.get(url, { responseType: "arraybuffer" });
+      const workbook = await XlsxPopulate.fromDataAsync(response.data);
 
       workbook.sheets().forEach((sheet) => {
         sheet.usedRange().forEach((cell) => {
           const value = cell.value();
           if (typeof value === "string") {
-            // Busca todas las ocurrencias [[llave]]
             const matches = value.match(/\[\[(.*?)\]\]/g);
             if (matches) {
               let nuevoValor = value;
               matches.forEach((match) => {
                 const key = match.replace("[[", "").replace("]]", "");
-                if (empresa[key] !== undefined && empresa[key] !== null) {
-                  nuevoValor = nuevoValor.replaceAll(match, empresa[key]);
-                } else {
-                  nuevoValor = nuevoValor.replaceAll(match, "");
-                }
+                nuevoValor = nuevoValor.replaceAll(match, empresa[key] ?? "");
               });
               cell.value(nuevoValor);
             }
@@ -77,32 +73,30 @@ router.get("/generar/:empresaId/:plantillaId", authMiddleware, async (req, res) 
       return res.status(400).json({ error: "Formato de plantilla no compatible" });
     }
 
-    // Guardar en BD el documento generado
+    // Guardar en la base de datos
     await pool.query(
       `INSERT INTO documentos_generados (nombre_documento, plantilla_id, empresa_id, generado_por, fecha_generacion)
        VALUES (?, ?, ?, ?, NOW())`,
-      [`${nombreBase}${extension}`, plantillaId, empresaId, req.user.id]
+      [`${nombreBase}.${extension}`, plantillaId, empresaId, req.user.id]
     );
 
-    // Enviar documento
     res.set({
       "Content-Type":
-        extension === ".docx"
+        extension === "docx"
           ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
           : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename="${encodeURIComponent(nombreBase + extension)}"`,
+      "Content-Disposition": `attachment; filename="${encodeURIComponent(nombreBase + '.' + extension)}"`,
     });
 
     return res.send(buffer);
 
   } catch (error) {
-    console.error("🚨 Error al generar y guardar documento:", error);
+    console.error("🚨 Error al generar documento:", error);
     return res.status(500).json({ error: "Error interno al generar documento" });
   }
 });
 
-
-// 🔐 Historial de documentos protegida con authMiddleware
+// 🔐 Historial de documentos
 router.get("/historial", authMiddleware, async (req, res) => {
   try {
     const [rows] = await pool.query(
@@ -124,6 +118,7 @@ router.get("/historial", authMiddleware, async (req, res) => {
   }
 });
 
+// 🔐 Historial filtrado por usuario
 router.get("/historial?propios=true", authMiddleware, async (req, res) => {
   const verSoloMios = req.query.propios === "true";
   const sql = `
