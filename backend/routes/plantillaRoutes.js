@@ -37,12 +37,16 @@ router.get('/', authMiddleware, async (req, res) => {
 
 // Subir una nueva plantilla
 router.post('/', authMiddleware, upload.single('archivo'), async (req, res) => {
+  console.log("📦 Archivo recibido:", req.file);
+  console.log("🏢 Tipo de empresa:", req.body.tipo_empresa);
+  console.log("👤 Usuario:", req.user);
+
   if (!req.file) {
     return res.status(400).json({ message: 'No se subió ningún archivo' });
   }
 
   const { originalname } = req.file;
-  const ruta = req.file.path; // URL pública en Cloudinary
+  const ruta = req.file.path;
   const { tipo_empresa } = req.body;
   const tipo = path.extname(originalname).toLowerCase() === '.docx' ? 'docx' : 'xlsx';
   const usuarioId = req.user.id;
@@ -52,13 +56,10 @@ router.post('/', authMiddleware, upload.single('archivo'), async (req, res) => {
       'INSERT INTO plantillas (nombre, tipo, ruta, tipo_empresa, creado_por) VALUES (?, ?, ?, ?, ?)',
       [originalname, tipo, ruta, tipo_empresa, usuarioId]
     );
-    console.log("📁 Archivo recibido:", req.file);
-    console.log("🏢 Tipo de empresa:", req.body.tipo_empresa);
 
     res.json({ message: 'Plantilla subida con éxito', ruta });
   } catch (error) {
-    console.error(error);
-    console.error("🚨 Error al subir plantilla:", error);
+    console.error("❌ Error en la base de datos:", error);
     res.status(500).json({ message: 'Error al guardar la plantilla' });
   }
 });
