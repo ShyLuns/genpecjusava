@@ -6,7 +6,8 @@ import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import ExcelJS from "exceljs";
 import pool from "../db.js";
-import authMiddleware from "../middleware/authMiddleware.js"; // 👈 Asegúrate de que esta ruta sea correcta
+import authMiddleware from "../middleware/authMiddleware.js";
+import XlsxPopulate from "xlsx-populate";
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -46,23 +47,31 @@ router.get("/generar/:empresaId/:plantillaId", authMiddleware, async (req, res) 
       buffer = doc.getZip().generate({ type: "nodebuffer" });
 
     } else if (extension === ".xlsx") {
-      const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.readFile(rutaPlantilla);
-      workbook.worksheets.forEach((worksheet) => {
-        worksheet.eachRow((row) => {
-          row.eachCell((cell) => {
-            if (typeof cell.value === "string") {
-              Object.keys(empresa).forEach((key) => {
-                const placeholder = `[[${key}]]`;
-                if (cell.value.includes(placeholder)) {
-                  cell.value = cell.value.replace(new RegExp(placeholder, "g"), empresa[key] || "");
+      const workbook = await XlsxPopulate.fromFileAsync(rutaPlantilla);
+
+      workbook.sheets().forEach((sheet) => {
+        sheet.usedRange().forEach((cell) => {
+          const value = cell.value();
+          if (typeof value === "string") {
+            // Busca todas las ocurrencias [[llave]]
+            const matches = value.match(/\[\[(.*?)\]\]/g);
+            if (matches) {
+              let nuevoValor = value;
+              matches.forEach((match) => {
+                const key = match.replace("[[", "").replace("]]", "");
+                if (empresa[key] !== undefined && empresa[key] !== null) {
+                  nuevoValor = nuevoValor.replaceAll(match, empresa[key]);
+                } else {
+                  nuevoValor = nuevoValor.replaceAll(match, "");
                 }
               });
+              cell.value(nuevoValor);
             }
-          });
+          }
         });
       });
-      buffer = await workbook.xlsx.writeBuffer();
+
+      buffer = await workbook.outputAsync();
 
     } else {
       return res.status(400).json({ error: "Formato de plantilla no compatible" });
