@@ -36,10 +36,22 @@ function Editor() {
             .catch(err => console.error("Error cargando plantillas:", err));
     }, []);
 
-    const abrirModal = (empresa) => {
+    const abrirModal = async (empresa) => {
         setEmpresaSeleccionada(empresa);
         setModalOpen(true);
+
+        const token = localStorage.getItem("token");
+
+        try {
+            const res = await axios.get(`${API_URL}/plantillas`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setPlantillas(res.data);
+        } catch (err) {
+            console.error("Error recargando plantillas:", err);
+        }
     };
+
 
     const cerrarModal = () => {
         setEmpresaSeleccionada(null);
