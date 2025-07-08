@@ -30,6 +30,11 @@ app.use((req, res, next) => {
 // ✅ SEGUNDA CAPA: middleware express
 app.use(express.json());
 
+app.use((req, res, next) => {
+  console.log(`🛬 Nueva petición: ${req.method} ${req.url}`);
+  next();
+});
+
 // ✅ RUTAS
 app.use('/api/auth', authRoutes);
 app.use('/api/empresas', empresaRoutes);
