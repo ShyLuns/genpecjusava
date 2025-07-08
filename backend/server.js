@@ -12,11 +12,14 @@ import documentosRoutes from './routes/documentos.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+import morgan from "morgan";
 dotenv.config();
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+app.use(morgan("combined"));
 
 // ✅ PRIMERA CAPA: Middleware CORS global
 app.use((req, res, next) => {
