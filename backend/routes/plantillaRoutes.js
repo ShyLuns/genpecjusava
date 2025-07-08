@@ -46,7 +46,7 @@ router.post('/', authMiddleware, upload.single('archivo'), async (req, res) => {
   }
 
   const { originalname, path: ruta } = req.file;
-  const { tipo_empresa } = req.body;
+  const tipoEmpresa = req.body.tipo_empresa?.toLowerCase(); // ✅ Normalizar a minúsculas
   const tipo = path.extname(originalname).toLowerCase() === '.docx' ? 'docx' : 'xlsx';
   const usuarioId = req.user.id;
 
@@ -55,22 +55,21 @@ router.post('/', authMiddleware, upload.single('archivo'), async (req, res) => {
     console.log("Nombre:", originalname);
     console.log("Tipo:", tipo);
     console.log("Ruta (Cloudinary):", ruta);
-    console.log("Tipo de empresa:", tipo_empresa);
+    console.log("Tipo de empresa (normalizado):", tipoEmpresa);
     console.log("Usuario ID:", usuarioId);
 
     const [result] = await pool.query(
       'INSERT INTO plantillas (nombre, tipo, ruta, tipo_empresa, creado_por) VALUES (?, ?, ?, ?, ?)',
-      [originalname, tipo, ruta, tipo_empresa, usuarioId]
+      [originalname, tipo, ruta, tipoEmpresa, usuarioId]
     );
 
     console.log("✅ Insertado en base de datos:", result);
     res.json({ message: 'Plantilla subida con éxito', ruta });
 
   } catch (error) {
-    console.error("❌ Error completo:", error); // Captura todo
+    console.error("❌ Error completo:", error);
     res.status(500).json({ message: 'Error al guardar la plantilla', error: error.message });
   }
-
 });
 
 
