@@ -37,44 +37,50 @@ router.get('/', authMiddleware, async (req, res) => {
 
 // Subir una nueva plantilla
 router.post('/', authMiddleware, upload.single('archivo'), async (req, res) => {
-  console.log("📦 Archivo recibido:", req.file);
-  console.log("🏢 Tipo de empresa:", req.body.tipo_empresa);
-  console.log("👤 Usuario:", req.user);
+  console.log("📥 Nueva solicitud de subida de plantilla");
+  console.log("📦 req.file:", req.file);
+  console.log("📩 req.body:", req.body);
+  console.log("👤 Usuario autenticado:", req.user);
 
   if (!req.file) {
+    console.error("❌ No se recibió archivo en la petición");
     return res.status(400).json({ message: 'No se subió ningún archivo' });
   }
 
-  const { originalname, path: ruta } = req.file;
-  const tipoEmpresa = req.body.tipo_empresa?.toLowerCase(); // ✅ Normalizar a minúsculas
-  const tipo = path.extname(originalname).toLowerCase() === '.docx' ? 'docx' : 'xlsx';
-  const usuarioId = req.user.id;
-
   try {
-    console.log("📝 Datos a insertar:");
-    console.log("Nombre:", originalname);
-    console.log("Tipo:", tipo);
-    console.log("Ruta (Cloudinary):", ruta);
-    console.log("Tipo de empresa (normalizado):", tipoEmpresa);
-    console.log("Usuario ID:", usuarioId);
+    const { originalname, path: ruta } = req.file;
+    const tipoEmpresa = req.body.tipo_empresa?.toLowerCase();
+    const tipo = path.extname(originalname).toLowerCase() === '.docx' ? 'docx' : 'xlsx';
+    const usuarioId = req.user.id;
+
+    console.log("📝 Preparando datos para BD:");
+    console.log("- Nombre:", originalname);
+    console.log("- Tipo:", tipo);
+    console.log("- Ruta Cloudinary:", ruta);
+    console.log("- Tipo empresa:", tipoEmpresa);
+    console.log("- Usuario ID:", usuarioId);
 
     const [result] = await pool.query(
       'INSERT INTO plantillas (nombre, tipo, ruta, tipo_empresa, creado_por) VALUES (?, ?, ?, ?, ?)',
       [originalname, tipo, ruta, tipoEmpresa, usuarioId]
     );
 
-    console.log("✅ Insertado en base de datos:", result);
-    res.json({ message: 'Plantilla subida con éxito', ruta });
+    console.log("✅ Plantilla insertada en base de datos correctamente", result);
+    return res.json({ message: 'Plantilla subida con éxito', ruta });
 
   } catch (error) {
-    console.error("❌ Error capturado:");
-    console.error("🧱 Nombre:", error.name);
+    console.error("❌ ERROR AL GUARDAR PLANTILLA:");
+    console.error("🧱 Tipo de error:", error.name);
     console.error("🧱 Mensaje:", error.message);
-    console.error("🧱 Código:", error.code);
-    console.error("🪵 Stacktrace:\n", error.stack);
-    console.error("🧾 Error como JSON:", JSON.stringify(error, null, 2));
+    console.error("🧱 Código:", error.code || 'Sin código');
+    console.error("🧱 Error completo:", error);
+    console.error("🪵 Stack trace:\n", error.stack);
 
-    res.status(500).json({ message: 'Error al guardar la plantilla', error: error.message });
+    return res.status(500).json({
+      message: 'Error al guardar la plantilla',
+      error: error.message,
+      code: error.code || null
+    });
   }
 });
 
