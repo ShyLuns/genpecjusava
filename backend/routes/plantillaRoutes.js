@@ -67,9 +67,13 @@ router.post('/', authMiddleware, upload.single('archivo'), async (req, res) => {
     res.json({ message: 'Plantilla subida con éxito', ruta });
 
   } catch (error) {
-    console.error("❌ Error completo:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
-    console.error("🧱 Error message:", error.message);
-    console.error("🪵 Stack trace:", error.stack);
+    console.error("❌ Error capturado:");
+    console.error("🧱 Nombre:", error.name);
+    console.error("🧱 Mensaje:", error.message);
+    console.error("🧱 Código:", error.code);
+    console.error("🪵 Stacktrace:\n", error.stack);
+    console.error("🧾 Error como JSON:", JSON.stringify(error, null, 2));
+
     res.status(500).json({ message: 'Error al guardar la plantilla', error: error.message });
   }
 });
