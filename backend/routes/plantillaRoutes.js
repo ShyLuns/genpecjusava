@@ -51,25 +51,26 @@ router.post('/', authMiddleware, upload.single('archivo'), async (req, res) => {
   const usuarioId = req.user.id;
 
   try {
-    console.log("📝 Insertando en base de datos:", {
-      nombre: originalname,
-      tipo,
-      ruta,
-      tipo_empresa,
-      creado_por: usuarioId,
-    });
+    console.log("📝 Datos a insertar:");
+    console.log("Nombre:", originalname);
+    console.log("Tipo:", tipo);
+    console.log("Ruta (Cloudinary):", ruta);
+    console.log("Tipo de empresa:", tipo_empresa);
+    console.log("Usuario ID:", usuarioId);
 
-    await pool.query(
+    const [result] = await pool.query(
       'INSERT INTO plantillas (nombre, tipo, ruta, tipo_empresa, creado_por) VALUES (?, ?, ?, ?, ?)',
       [originalname, tipo, ruta, tipo_empresa, usuarioId]
     );
 
+    console.log("✅ Insertado en base de datos:", result);
     res.json({ message: 'Plantilla subida con éxito', ruta });
+
   } catch (error) {
-    console.error("❌ Error en la base de datos:", error.message);
-    console.error(error); // Mostrar detalles completos
+    console.error("❌ Error completo:", error); // Captura todo
     res.status(500).json({ message: 'Error al guardar la plantilla', error: error.message });
   }
+
 });
 
 
