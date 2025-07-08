@@ -76,10 +76,11 @@ router.post('/', authMiddleware, upload.single('archivo'), async (req, res) => {
     console.error("🧱 Error completo:", error);
     console.error("🪵 Stack trace:\n", error.stack);
 
-    return res.status(500).json({
+    res.status(500).json({
       message: 'Error al guardar la plantilla',
       error: error.message,
-      code: error.code || null
+      stack: error.stack, // opcional
+      code: error.code || null // opcional
     });
   }
 });
