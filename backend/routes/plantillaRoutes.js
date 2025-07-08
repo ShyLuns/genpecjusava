@@ -37,35 +37,38 @@ router.get('/', authMiddleware, async (req, res) => {
 
 // Subir una nueva plantilla
 router.post('/', authMiddleware, upload.single('archivo'), async (req, res) => {
+  console.log("📦 Archivo recibido:", req.file);
+  console.log("🏢 Tipo de empresa:", req.body.tipo_empresa);
+  console.log("👤 Usuario:", req.user);
+
+  if (!req.file) {
+    return res.status(400).json({ message: 'No se subió ningún archivo' });
+  }
+
+  const { originalname, path: ruta } = req.file;
+  const { tipo_empresa } = req.body;
+  const tipo = path.extname(originalname).toLowerCase() === '.docx' ? 'docx' : 'xlsx';
+  const usuarioId = req.user.id;
+
   try {
-    console.log("📦 Archivo recibido:", req.file);
-    console.log("🏢 Tipo de empresa:", req.body.tipo_empresa);
-    console.log("👤 Usuario:", req.user);
-
-    if (!req.file) {
-      console.log("❌ No se subió archivo.");
-      return res.status(400).json({ message: 'No se subió ningún archivo' });
-    }
-
-    const { originalname } = req.file;
-    const ruta = req.file.path;
-    const { tipo_empresa } = req.body;
-    const tipo = path.extname(originalname).toLowerCase() === '.docx' ? 'docx' : 'xlsx';
-    const usuarioId = req.user.id;
-
-    console.log("✅ Datos para DB:", { originalname, tipo, ruta, tipo_empresa, usuarioId });
+    console.log("📝 Insertando en base de datos:", {
+      nombre: originalname,
+      tipo,
+      ruta,
+      tipo_empresa,
+      creado_por: usuarioId,
+    });
 
     await pool.query(
       'INSERT INTO plantillas (nombre, tipo, ruta, tipo_empresa, creado_por) VALUES (?, ?, ?, ?, ?)',
       [originalname, tipo, ruta, tipo_empresa, usuarioId]
     );
 
-    console.log("📥 Plantilla guardada en base de datos.");
     res.json({ message: 'Plantilla subida con éxito', ruta });
-
   } catch (error) {
-    console.error("❌ Error completo:", error);
-    res.status(500).json({ message: 'Error al guardar la plantilla' });
+    console.error("❌ Error en la base de datos:", error.message);
+    console.error(error); // Mostrar detalles completos
+    res.status(500).json({ message: 'Error al guardar la plantilla', error: error.message });
   }
 });
 
