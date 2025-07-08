@@ -100,4 +100,11 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Error al eliminar la plantilla' });
   }
 });
+
+router.get("/test", (req, res) => {
+  console.log("🧪 Ruta de prueba alcanzada.");
+  res.send("Ruta test OK");
+});
+
+
 export default router;
