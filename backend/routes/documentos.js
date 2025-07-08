@@ -1,4 +1,5 @@
 import express from "express";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import PizZip from "pizzip";
@@ -6,7 +7,6 @@ import Docxtemplater from "docxtemplater";
 import pool from "../db.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import XlsxPopulate from "xlsx-populate";
-import axios from "axios";
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -16,25 +16,26 @@ router.get("/generar/:empresaId/:plantillaId", authMiddleware, async (req, res) 
   const { empresaId, plantillaId } = req.params;
 
   try {
-    // Obtener datos de empresa
     const [empresaRows] = await pool.query("SELECT * FROM empresas WHERE id = ?", [empresaId]);
     if (empresaRows.length === 0) return res.status(404).json({ error: "Empresa no encontrada" });
     const empresa = empresaRows[0];
 
-    // Obtener plantilla
     const [plantillaRows] = await pool.query("SELECT ruta, nombre, tipo FROM plantillas WHERE id = ?", [plantillaId]);
     if (plantillaRows.length === 0) return res.status(404).json({ error: "Plantilla no encontrada" });
 
     const plantilla = plantillaRows[0];
-    const url = plantilla.ruta; // URL pública de Cloudinary
+    const rutaPlantilla = path.resolve(__dirname, "..", plantilla.ruta);
     const extension = plantilla.tipo.toLowerCase(); // 'docx' o 'xlsx'
     const nombreBase = `${empresa.nombre} - ${plantilla.nombre}`;
+
+    if (!fs.existsSync(rutaPlantilla)) {
+      return res.status(404).json({ error: "La plantilla no existe" });
+    }
+
     let buffer;
 
     if (extension === "docx") {
-      // Descargar archivo desde Cloudinary
-      const response = await axios.get(url, { responseType: "arraybuffer" });
-      const contenido = response.data;
+      const contenido = fs.readFileSync(rutaPlantilla, "binary");
       const zip = new PizZip(contenido);
       const doc = new Docxtemplater(zip, {
         paragraphLoop: true,
@@ -46,9 +47,7 @@ router.get("/generar/:empresaId/:plantillaId", authMiddleware, async (req, res) 
       buffer = doc.getZip().generate({ type: "nodebuffer" });
 
     } else if (extension === "xlsx") {
-      // Descargar archivo Excel desde Cloudinary
-      const response = await axios.get(url, { responseType: "arraybuffer" });
-      const workbook = await XlsxPopulate.fromDataAsync(response.data);
+      const workbook = await XlsxPopulate.fromFileAsync(rutaPlantilla);
 
       workbook.sheets().forEach((sheet) => {
         sheet.usedRange().forEach((cell) => {
@@ -68,12 +67,10 @@ router.get("/generar/:empresaId/:plantillaId", authMiddleware, async (req, res) 
       });
 
       buffer = await workbook.outputAsync();
-
     } else {
       return res.status(400).json({ error: "Formato de plantilla no compatible" });
     }
 
-    // Guardar en la base de datos
     await pool.query(
       `INSERT INTO documentos_generados (nombre_documento, plantilla_id, empresa_id, generado_por, fecha_generacion)
        VALUES (?, ?, ?, ?, NOW())`,
@@ -96,7 +93,6 @@ router.get("/generar/:empresaId/:plantillaId", authMiddleware, async (req, res) 
   }
 });
 
-// 🔐 Historial de documentos
 router.get("/historial", authMiddleware, async (req, res) => {
   try {
     const [rows] = await pool.query(
@@ -118,7 +114,6 @@ router.get("/historial", authMiddleware, async (req, res) => {
   }
 });
 
-// 🔐 Historial filtrado por usuario
 router.get("/historial?propios=true", authMiddleware, async (req, res) => {
   const verSoloMios = req.query.propios === "true";
   const sql = `

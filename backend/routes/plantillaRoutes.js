@@ -84,4 +84,21 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   }
 });
 
+// 📁 routes/plantillaRoutes.js
+router.get('/faltantes', authMiddleware, async (req, res) => {
+  try {
+    const [plantillas] = await pool.query('SELECT id, nombre, ruta FROM plantillas');
+
+    const faltantes = plantillas.filter((p) => {
+      const rutaAbsoluta = path.join(__dirname, "..", p.ruta);
+      return !fs.existsSync(rutaAbsoluta);
+    });
+
+    res.json(faltantes);
+  } catch (error) {
+    console.error("❌ Error detectando plantillas faltantes:", error);
+    res.status(500).json({ message: 'Error al verificar plantillas faltantes' });
+  }
+});
+
 export default router;
