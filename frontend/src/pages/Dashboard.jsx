@@ -78,6 +78,24 @@ function Dashboard() {
         }
     };
 
+    const fetchDocumentos = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch(`${API_URL}/documentos/historial`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (!response.ok) throw new Error("Error al obtener historial");
+
+            const data = await response.json();
+            setDocumentos(data);
+        } catch (error) {
+            console.error("Error al cargar historial:", error);
+        }
+    };
+    useEffect(() => {
+        fetchDocumentos();
+    }, []);
 
     // Calcular documentos a mostrar en la página actual
     const indexOfLastItem = currentPage * itemsPerPage;
