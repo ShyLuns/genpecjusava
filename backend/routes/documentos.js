@@ -138,7 +138,7 @@ router.get("/historial?propios=true", authMiddleware, async (req, res) => {
 });
 
 // 🗑 Eliminar documento generado por ID
-router.delete("/:id", authMiddleware, async (req, res) => {
+router.delete("/eliminar/:id", authMiddleware, async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -154,6 +154,5 @@ router.delete("/:id", authMiddleware, async (req, res) => {
     res.status(500).json({ message: "Error al eliminar el documento" });
   }
 });
-
 
 export default router;
