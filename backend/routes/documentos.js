@@ -137,4 +137,23 @@ router.get("/historial?propios=true", authMiddleware, async (req, res) => {
   }
 });
 
+// 🗑 Eliminar documento generado por ID
+router.delete("/:id", authMiddleware, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const [docRows] = await pool.query("SELECT nombre_documento FROM documentos_generados WHERE id = ?", [id]);
+    if (docRows.length === 0) {
+      return res.status(404).json({ message: "Documento no encontrado" });
+    }
+
+    await pool.query("DELETE FROM documentos_generados WHERE id = ?", [id]);
+    res.json({ message: "Documento eliminado correctamente" });
+  } catch (error) {
+    console.error("❌ Error al eliminar documento:", error);
+    res.status(500).json({ message: "Error al eliminar el documento" });
+  }
+});
+
+
 export default router;

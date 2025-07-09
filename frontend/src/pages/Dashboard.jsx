@@ -45,6 +45,36 @@ function Dashboard() {
         fetchDocs();
     }, []);
 
+    const handleDeleteDocumento = async (id) => {
+        const confirm = await Swal.fire({
+            title: "¿Eliminar documento?",
+            text: "Esto eliminará el historial de este documento.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Sí, eliminar",
+        });
+
+        if (confirm.isConfirmed) {
+            try {
+                const token = localStorage.getItem("token");
+                const res = await fetch(`${API_URL}/documentos/${id}`, {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+
+                if (!res.ok) throw new Error("Error al eliminar documento");
+
+                Swal.fire("¡Eliminado!", "Documento eliminado correctamente.", "success");
+                fetchHistorial(); // 👈 vuelve a cargar la lista
+            } catch (error) {
+                Swal.fire("Error", error.message, "error");
+            }
+        }
+    };
 
     // Calcular documentos a mostrar en la página actual
     const indexOfLastItem = currentPage * itemsPerPage;
@@ -204,6 +234,7 @@ function Dashboard() {
                                         <th className="py-3 px-4">Empresa</th>
                                         <th className="py-3 px-4">Fecha</th>
                                         <th className="py-3 px-4">Generado por</th>
+                                        <th className="py-3 px-4">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -219,6 +250,15 @@ function Dashboard() {
                                             <td className="py-2 px-4">{doc.usuario}</td>
                                         </tr>
                                     ))}
+                                    <td className="py-2 px-4">
+                                        <button
+                                            onClick={() => handleDeleteDocumento(doc.id)}
+                                            className="text-red-600 hover:underline"
+                                        >
+                                            Eliminar
+                                        </button>
+                                    </td>
+
                                     {documentos.length === 0 && (
                                         <tr>
                                             <td colSpan="4" className="py-4 text-center text-gray-400">
