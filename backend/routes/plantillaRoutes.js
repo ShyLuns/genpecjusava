@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 const readDir = util.promisify(fs.readdir);
 const copyFile = util.promisify(fs.copyFile);
+import util from 'util'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
