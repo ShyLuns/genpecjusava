@@ -52,6 +52,38 @@ function Plantillas() {
             return;
         }
 
+        const restaurarPlantillas = async () => {
+            const token = localStorage.getItem("token");
+
+            const confirm = await Swal.fire({
+                title: "¿Restaurar plantillas predeterminadas?",
+                text: "Esto volverá a subir las plantillas por defecto.",
+                icon: "question",
+                showCancelButton: true,
+                confirmButtonColor: "#2563eb",
+                confirmButtonText: "Sí, restaurar",
+            });
+
+            if (!confirm.isConfirmed) return;
+
+            try {
+                setLoading(true);
+                const response = await fetch(`${API_URL}/plantillas/restaurar`, {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                const data = await response.json();
+                Swal.fire("¡Listo!", data.message, "success");
+                fetchPlantillas();
+            } catch (error) {
+                Swal.fire("Error", "No se pudieron restaurar las plantillas", "error");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+
         const token = localStorage.getItem("token");
         if (!token) {
             Swal.fire("Error", "No tienes permiso para subir archivos", "error");
@@ -216,6 +248,21 @@ function Plantillas() {
                 >
                     {loading ? <CircularProgress size={20} color="inherit" /> : "Subir Plantilla"}
                 </Button>
+                <Button
+                    onClick={restaurarPlantillas}
+                    variant="outlined"
+                    startIcon={<UploadCloud />}
+                    sx={{
+                        color: "#16a34a",
+                        borderColor: "#16a34a",
+                        fontWeight: "bold",
+                        "&:hover": { backgroundColor: "#16a34a", color: "white" },
+                    }}
+                    disabled={loading}
+                >
+                    Restaurar por defecto
+                </Button>
+
             </div>
 
             {/* Listado de plantillas con filtro */}

@@ -6,6 +6,8 @@ import pool from '../db.js';
 import authMiddleware from '../middleware/authMiddleware.js';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+const readDir = util.promisify(fs.readdir);
+const copyFile = util.promisify(fs.copyFile);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -98,6 +100,41 @@ router.get('/faltantes', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error("❌ Error detectando plantillas faltantes:", error);
     res.status(500).json({ message: 'Error al verificar plantillas faltantes' });
+  }
+});
+
+router.post('/restaurar', authMiddleware, async (req, res) => {
+  try {
+    const archivos = await readDir(path.join(__dirname, '..', 'plantillas_default'));
+
+    for (const archivo of archivos) {
+      const origen = path.join(__dirname, '..', 'plantillas_default', archivo);
+      const destino = path.join(__dirname, '..', 'uploads', archivo);
+
+      // Copiar el archivo físicamente
+      await copyFile(origen, destino);
+
+      const tipo = path.extname(archivo).toLowerCase().replace(".", "");
+      const tipo_empresa = archivo.split("_")[0]; // Ej: 'bar_pec.docx' → 'bar'
+      const nombre = archivo;
+      const ruta = `uploads/${archivo}`;
+      const creado_por = req.user.id;
+
+      // Verificar si ya existe
+      const [existente] = await pool.query("SELECT * FROM plantillas WHERE nombre = ?", [nombre]);
+      if (existente.length === 0) {
+        await pool.query(
+          `INSERT INTO plantillas (nombre, tipo, ruta, tipo_empresa, creado_por)
+           VALUES (?, ?, ?, ?, ?)`,
+          [nombre, tipo, ruta, tipo_empresa, creado_por]
+        );
+      }
+    }
+
+    res.json({ message: "Plantillas restauradas con éxito" });
+  } catch (error) {
+    console.error("Error al restaurar plantillas:", error);
+    res.status(500).json({ error: "Error al restaurar plantillas" });
   }
 });
 

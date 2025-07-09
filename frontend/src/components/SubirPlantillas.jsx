@@ -2,7 +2,7 @@ import React from "react";
 
 const API_URL = import.meta.env.VITE_REACT_APP_API_URL || "http://localhost:5000";
 
-const ResubirPlantillas = () => {
+const SubirPlantillas = () => {
   const archivos = [
     { nombre: "Bar - Hotel XYZ - PEC.docx", tipo_empresa: "bar" },
     { nombre: "Bar - Hotel XYZ - Radicado.xlsx", tipo_empresa: "bar" },
@@ -44,4 +44,4 @@ const ResubirPlantillas = () => {
   );
 };
 
-export default ResubirPlantillas;
+export default SubirPlantillas;
