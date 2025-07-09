@@ -48,7 +48,7 @@ function Dashboard() {
     const handleDeleteDocumento = async (id) => {
         const confirm = await Swal.fire({
             title: "¿Eliminar documento?",
-            text: "Esto eliminará el historial de este documento.",
+            text: "Esta acción no se puede deshacer.",
             icon: "warning",
             showCancelButton: true,
             confirmButtonColor: "#d33",
@@ -56,25 +56,27 @@ function Dashboard() {
             confirmButtonText: "Sí, eliminar",
         });
 
-        if (confirm.isConfirmed) {
-            try {
-                const token = localStorage.getItem("token");
-                const res = await fetch(`${API_URL}/documentos/${id}`, {
-                    method: "DELETE",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
+        if (!confirm.isConfirmed) return;
 
-                if (!res.ok) throw new Error("Error al eliminar documento");
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch(`${API_URL}/documentos/eliminar/${id}`, {
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
 
-                Swal.fire("¡Eliminado!", "Documento eliminado correctamente.", "success");
-                fetchHistorial(); // 👈 vuelve a cargar la lista
-            } catch (error) {
-                Swal.fire("Error", error.message, "error");
-            }
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || "Error al eliminar");
+
+            Swal.fire("¡Eliminado!", "El documento ha sido eliminado.", "success");
+            fetchDocumentos(); // Asegúrate de tener esta función definida
+        } catch (error) {
+            Swal.fire("Error", error.message, "error");
         }
     };
+
 
     // Calcular documentos a mostrar en la página actual
     const indexOfLastItem = currentPage * itemsPerPage;
@@ -248,25 +250,26 @@ function Dashboard() {
                                                     : "Fecha no disponible"}
                                             </td>
                                             <td className="py-2 px-4">{doc.usuario}</td>
+                                            <td className="py-2 px-4">
+                                                <button
+                                                    onClick={() => handleDeleteDocumento(doc.id)}
+                                                    className="text-red-600 hover:underline"
+                                                >
+                                                    Eliminar
+                                                </button>
+                                            </td>
                                         </tr>
                                     ))}
-                                    <td className="py-2 px-4">
-                                        <button
-                                            onClick={() => handleDeleteDocumento(doc.id)}
-                                            className="text-red-600 hover:underline"
-                                        >
-                                            Eliminar
-                                        </button>
-                                    </td>
 
                                     {documentos.length === 0 && (
                                         <tr>
-                                            <td colSpan="4" className="py-4 text-center text-gray-400">
+                                            <td colSpan="5" className="py-4 text-center text-gray-400">
                                                 No hay documentos generados aún.
                                             </td>
                                         </tr>
                                     )}
                                 </tbody>
+
                             </table>
                         </div>
 
